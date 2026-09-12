@@ -1,5 +1,6 @@
 # Eval run output
 evals/results/
+*-run.json
 evals/*-run.json
 trace.jsonl
 **/trace.jsonl

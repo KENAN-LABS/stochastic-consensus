@@ -35,6 +35,12 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- The `description`'s checkable-answer exclusion was written broadly enough to
+  suppress legitimate coverage questions: `triggers-without-technique-named`
+  regressed to a single-pass answer with the skill never loading, and all three
+  prose judges passed it anyway. Narrowed to "one check would settle it", with
+  open-ended questions about a codebase explicitly still in scope. Verified in
+  both directions — the trigger fires again, the negative case still declines.
 - `CONTRIBUTING.md` listed six grader types that do not exist (`judge`,
   `contains`, `equals`, `script`, `command`, `file`) and omitted two that do
   (`tool_used`, `tool_order`). Corrected against the published harness

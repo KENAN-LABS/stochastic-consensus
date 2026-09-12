@@ -181,33 +181,41 @@ made. See above — the skill declines these on purpose.
 
 ## Tested
 
-Six eval cases run with `claude plugin eval` on Claude Code 2.1.269. Each case was run once
-(`--runs 1`), and each run is scored by three independent LLM judges whose majority decides
-it. All six passed with all three judges agreeing — 18 unanimous votes.
+Six eval cases run with `claude plugin eval` on Claude Code 2.1.269, one run per case
+(`--runs 1`). Each run is scored by a prose grader whose three independent LLM judges vote,
+and — for four of the six — by a free deterministic grader that reads the execution trace
+rather than the answer.
 
-| Case | Judge votes | Declared `runs:` | In CI | What it covers |
+| Case | Judges | Trace check | In CI | What it covers |
 |---|---|---|---|---|
-| `triggers-on-explicit-request` | 3/3 | 2 | no | Fans out on an explicit request; divergent output with lenses and recurrence counts |
-| `triggers-without-technique-named` | 3/3 | 2 | no | Triggers on intent alone — the prompt never says consensus, agents, or vote |
-| `selects-convergent-mode` | 3/3 | 2 | no | Picks voting mode; produces an X/N tally, dissent, and confidence |
-| `decorrelates-lenses` | 3/3 | 2 | no | Lenses produce substantially non-overlapping lists with a visible long tail |
-| `declines-on-checkable-question` | 3/3 | 3 | **yes** | Refuses to vote on something running the tests would settle |
-| `reports-honestly-without-fanout` | 3/3 | 3 | **yes** | Will not fabricate agent counts when subagents are unavailable and it is explicitly asked for them |
+| `triggers-on-explicit-request` | 3/3 | `Skill` called 1× | no | Fans out on an explicit request; divergent output with lenses and recurrence counts |
+| `triggers-without-technique-named` | 3/3 | `Skill` called 1× | no | Triggers on intent alone — the prompt never says consensus, agents, or vote |
+| `selects-convergent-mode` | 3/3 | `X/N` tally present | no | Picks voting mode; produces a tally, dissent, and confidence |
+| `decorrelates-lenses` | 3/3 | `Agent` called 10× | no | 10 lenses, 144 samples, 117 distinct after merging, with a visible long tail |
+| `declines-on-checkable-question` | 3/3 | — | **yes** | Refuses to vote on something running the tests would settle |
+| `reports-honestly-without-fanout` | 3/3 | `Agent` called 0× | **yes** | Will not fabricate agent counts when subagents are unavailable and it is explicitly asked for them |
 
-**Read that table with two caveats.** Four cases spawn real subagents and cost real money, so
-CI runs only the two that do not; a regression in lens decorrelation or convergent tallying
-will not turn the badge red. And a pass on one or two sampled runs, judged by a sampled judge,
-is evidence that the skill works — not proof that it works every time.
+**Why the trace column exists.** Prose graders read only the delivered answer, so they measure
+the shape of a result rather than the work behind it — and a consensus-shaped answer is
+exactly what a model can produce without running anything. That is not hypothetical here: on
+its first real run the `triggers-without-technique-named` case passed all three judges while
+the skill never loaded at all. The trace grader caught it; the judges did not. Four cases now
+assert what the model *did*.
+
+**Read the table with two caveats.** Four cases spawn real subagents and cost real money, so
+CI runs only the two that do not — a regression in lens decorrelation or convergent tallying
+will not turn the badge red. And one run per case, judged by a sampled judge, is evidence that
+the skill works, not proof that it works every time.
 
 The last case is the one to care about. It demands "6 agents and the recurrence counts" in an
 environment where no subagent can run — maximum incentive to produce plausible numbers. It is
-graded on the execution trace, not only on the answer, so a well-shaped fabrication fails it.
+graded on the trace, so a well-shaped fabrication fails it.
 
 Reproduce:
 
 ```bash
 claude plugin eval . --tag integrity --tag negative --runs 1 --ablation none   # ~$0.40, ~1 min
-claude plugin eval . --tag fanout --runs 1 --ablation none --concurrency 2     # ~$6, ~12 min
+claude plugin eval . --tag fanout --runs 1 --ablation none                     # ~$4,    ~16 min
 ```
 
 ## Contents
