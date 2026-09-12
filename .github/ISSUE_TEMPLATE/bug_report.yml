@@ -2,6 +2,13 @@ name: Bug report
 description: The skill behaved incorrectly
 labels: [bug]
 body:
+  - type: markdown
+    attributes:
+      value: >
+        Issues are public and this form asks you to paste a real prompt and a
+        real answer. Redact absolute paths, hostnames, customer names,
+        credentials, and anything from a private codebase first — replace them
+        with placeholders rather than leaving them in.
   - type: textarea
     id: prompt
     attributes:

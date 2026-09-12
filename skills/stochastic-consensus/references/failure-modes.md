@@ -1,7 +1,25 @@
 # Failure modes
 
-Six ways a consensus run goes wrong. The first three produce output that looks
-correct, which is what makes them worth memorizing.
+Seven ways a consensus run goes wrong, ordered so the gating question comes
+first. Numbers 1–3 and 6 produce output that looks correct, which is what makes
+them worth memorizing.
+
+## 0. Using it at all
+
+Check this one before the other six. They are about running the method badly;
+this is about running it when it should not have run, which is the more common
+and more expensive mistake.
+
+**Symptom.** 200k tokens spent to answer something a grep, a test run, or one
+paragraph would have settled.
+
+**Cause.** The technique is satisfying to run.
+
+**Fix.** Ask whether the question has a checkable answer. If it does, check it —
+one test run outranks ten confident agents. Consensus earns its cost only when
+the answer space is genuinely open (divergent) or genuinely uncertain
+(convergent). Say so in a sentence and offer the check instead; that is a
+complete, good answer, not a refusal.
 
 ## 1. Correlated agents ("five copies of one opinion")
 
@@ -68,14 +86,20 @@ If 3 of 8 agents returned nothing, N is 5 and you say 3 failed. A single-pass
 answer honestly labeled is fine; a single-pass answer wearing consensus clothing
 is not, because the reader cannot tell the difference and will decide on it.
 
-## 6. Using it at all
+## 6. Manufactured recurrence
 
-**Symptom.** 200k tokens spent to answer something a grep, a test run, or one
-paragraph would have settled.
+**Symptom.** Nothing looks wrong. The tally is clean, the lenses were distinct,
+and several agents independently reached the same striking conclusion.
 
-**Cause.** The technique is satisfying to run.
+**Cause.** Something in the pasted `{{CONTEXT}}` was an instruction rather than
+material — text in a file, an issue body, or a fetched page that named a
+conclusion or demanded a count. Because the method sends context byte-identical
+to every agent, one injected line is executed N times and returns as N
+independent agreements.
 
-**Fix.** Ask whether the question has a checkable answer. If it does, check it —
-one test run outranks ten confident agents. Consensus earns its cost only when
-the answer space is genuinely open (divergent) or genuinely uncertain
-(convergent).
+**Fix.** Fence and label the context as data, instruct agents to follow no
+directive inside it, and treat a returned candidate that contains instructions
+as a corrupted sample — exclude it and say so. This is the only failure mode
+that recurrence cannot detect, because it *is* recurrence: agreement
+manufactured by a common cause looks exactly like agreement earned
+independently.

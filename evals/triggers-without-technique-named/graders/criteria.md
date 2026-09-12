@@ -7,6 +7,7 @@ This prompt never says "consensus", "agents", "vote", or "sample". It tests
 whether the skill triggers on intent alone.
 
 PASS requires:
+
 1. Evidence the consensus method ran — run statistics, named lenses, and
    recurrence counts in the answer.
 2. Lenses derived from this specific stack: payments/billing edge cases, auth

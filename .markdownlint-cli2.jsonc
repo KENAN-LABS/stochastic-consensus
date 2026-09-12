@@ -1,0 +1,15 @@
+{
+  // Prose is this project's deliverable, so the structural rules are enforced
+  // and the cosmetic ones are not.
+  "config": {
+    "default": true,
+    "MD013": { "line_length": 95, "code_blocks": false, "tables": false },
+    "MD024": { "siblings_only": true },  // repeated "### Added" across releases
+    "MD033": false,                      // inline HTML is fine where used
+    "MD041": false,                      // frontmatter precedes the H1 in SKILL.md
+    "MD046": false,                      // fenced and indented code both appear
+    "MD060": false                       // compact |---|---| table separators
+  },
+  "globs": ["**/*.md"],
+  "ignores": ["node_modules/**", "evals/results/**"]
+}

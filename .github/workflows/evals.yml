@@ -6,23 +6,187 @@ on:
       - 'skills/**'
       - 'evals/**'
       - '.claude-plugin/**'
+      - '.github/workflows/evals.yml'
   workflow_dispatch:
+    inputs:
+      suite:
+        description: 'Which cases to run'
+        type: choice
+        default: cheap
+        options:
+          - cheap      # integrity + negative, no fan-out (~$0.40, ~1 min)
+          - fanout     # real subagent swarms      (~$6,    ~12 min)
+          - all
+        required: true
+
+# Least privilege: this workflow only ever reads the tree.
+permissions:
+  contents: read
+
+# One run per ref. Superseded commits stop burning API credit.
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  cheap:
-    name: integrity + negative cases
+  # Free, deterministic, runs everywhere including fork PRs.
+  checks:
+    name: manifest + docs checks
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - name: Install Claude Code
-        run: curl -fsSL https://claude.ai/install.sh | bash
-      - name: Run non-fanout evals
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Versions agree across every manifest field
+        run: |
+          python3 - <<'PY'
+          import json, re, sys, pathlib
+
+          plugin = json.load(open('.claude-plugin/plugin.json'))
+          market = json.load(open('.claude-plugin/marketplace.json'))
+
+          found = {
+              '.claude-plugin/plugin.json :: version': plugin['version'],
+              '.claude-plugin/marketplace.json :: metadata.version': market['metadata']['version'],
+              '.claude-plugin/marketplace.json :: plugins[0].version': market['plugins'][0]['version'],
+          }
+
+          changelog = pathlib.Path('CHANGELOG.md').read_text()
+          m = re.search(r'^## \[(\d+\.\d+\.\d+)\]', changelog, re.M)
+          if not m:
+              sys.exit('CHANGELOG.md has no released "## [x.y.z]" heading.')
+          found['CHANGELOG.md :: latest release heading'] = m.group(1)
+
+          for label, value in found.items():
+              print(f'  {value:10}  {label}')
+
+          if len(set(found.values())) != 1:
+              sys.exit('\nVersion strings disagree. All four must match.')
+          print('\nAll version strings agree.')
+          PY
+
+      - name: Manifests are valid JSON and structurally sound
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, sys
+
+          plugin = json.load(open('.claude-plugin/plugin.json'))
+          market = json.load(open('.claude-plugin/marketplace.json'))
+          errors = []
+
+          for key in ('name', 'version', 'description', 'author', 'license'):
+              if key not in plugin:
+                  errors.append(f'plugin.json is missing "{key}"')
+
+          # The skill directory the loader looks for is derived from the plugin name.
+          skill = pathlib.Path('skills') / plugin['name'] / 'SKILL.md'
+          if not skill.is_file():
+              errors.append(f'plugin.json name "{plugin["name"]}" implies {skill}, which does not exist')
+
+          evals_dir = pathlib.Path(plugin.get('experimental', {}).get('evals', 'evals'))
+          if not evals_dir.is_dir():
+              errors.append(f'experimental.evals points at {evals_dir}, which does not exist')
+
+          if market['plugins'][0]['name'] != plugin['name']:
+              errors.append('marketplace.json plugins[0].name does not match plugin.json name')
+
+          if errors:
+              sys.exit('\n'.join(errors))
+          print(f'Manifests OK. Skill at {skill}, evals at {evals_dir}/.')
+          PY
+
+      - name: Every eval case has a grader and declared runs
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, sys
+
+          errors = []
+          cases = sorted(p for p in pathlib.Path('evals').iterdir() if p.is_dir() and p.name != 'results')
+          if not cases:
+              sys.exit('No eval cases found under evals/.')
+
+          for case in cases:
+              prompt = case / 'prompt.md'
+              if not prompt.is_file():
+                  errors.append(f'{case.name}: no prompt.md')
+                  continue
+              graders = list((case / 'graders').glob('*.md')) if (case / 'graders').is_dir() else []
+              if not graders:
+                  errors.append(f'{case.name}: no graders/*.md')
+              text = prompt.read_text()
+              if not re.search(r'^runs:\s*\d+', text, re.M):
+                  errors.append(f'{case.name}: prompt.md declares no "runs:"')
+              if not re.search(r'^tags:\s*\[', text, re.M):
+                  errors.append(f'{case.name}: prompt.md declares no "tags:"')
+
+          if errors:
+              sys.exit('\n'.join(errors))
+          print(f'{len(cases)} eval cases, each with a grader and declared runs/tags.')
+          PY
+
+      - name: Markdown lint
+        run: npx --yes markdownlint-cli2 "**/*.md" "#node_modules"
+
+  evals:
+    name: eval suite
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Fork PRs never receive repository secrets, so the eval arm cannot run on
+    # them. It is skipped rather than failed; `checks` above is the gate that
+    # applies to every contributor.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+
+      # Pinned, not `curl | bash`: CI must test the version the README claims.
+      - name: Install Claude Code 2.1.269
+        run: npm install -g @anthropic-ai/claude-code@2.1.269
+
+      - name: Confirm the API key is present
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::ANTHROPIC_API_KEY is not set for this repository."
+            echo "Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+      - name: Select suite
+        id: suite
+        run: |
+          case "${{ github.event.inputs.suite || 'cheap' }}" in
+            fanout) echo 'args=--tag fanout --concurrency 2'            >> "$GITHUB_OUTPUT"
+                    echo 'budget=8'                                     >> "$GITHUB_OUTPUT" ;;
+            all)    echo 'args=--concurrency 2'                         >> "$GITHUB_OUTPUT"
+                    echo 'budget=10'                                    >> "$GITHUB_OUTPUT" ;;
+            *)      echo 'args=--tag integrity --tag negative'          >> "$GITHUB_OUTPUT"
+                    echo 'budget=2'                                     >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Run evals
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           claude plugin eval . \
-            --tag integrity --tag negative \
+            ${{ steps.suite.outputs.args }} \
             --runs 1 --ablation none \
             --trust-plugin --no-publish \
             --threshold 1.0 \
-            --max-cost-usd 2
+            --max-cost-usd ${{ steps.suite.outputs.budget }} \
+            --json eval-result.json
+
+      - name: Upload eval report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: eval-result
+          path: eval-result.json
+          if-no-files-found: ignore

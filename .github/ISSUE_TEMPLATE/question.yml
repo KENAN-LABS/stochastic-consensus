@@ -1,0 +1,29 @@
+name: Question
+description: Something is unclear, or the eval harness is doing something unexpected
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Issues are public. Please redact absolute paths, hostnames, credentials,
+        and anything from a private codebase before posting — including inside
+        pasted output and `trace.jsonl` excerpts.
+  - type: dropdown
+    id: area
+    attributes:
+      label: What is this about?
+      options:
+        - Using the skill
+        - Writing or running eval cases
+        - Installing the plugin
+        - Something in the docs is wrong or unclear
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: Include what you tried and what you expected.
+    validations:
+      required: true

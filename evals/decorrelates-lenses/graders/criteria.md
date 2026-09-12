@@ -7,6 +7,7 @@ weight: 1
 This grades decorrelation quality specifically.
 
 PASS requires:
+
 1. The answer names at least 5 lenses, each along a genuinely different
    dimension. Strong examples: real latency (network/render), *perceived*
    performance (skeletons, optimistic UI), startup/cold-boot, data and caching

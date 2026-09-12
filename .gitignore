@@ -1,5 +1,10 @@
+# Eval run output
 evals/results/
+evals/*-run.json
+trace.jsonl
+**/trace.jsonl
+
+# Local noise
 .DS_Store
 node_modules/
 *.log
-evals/*-run.json

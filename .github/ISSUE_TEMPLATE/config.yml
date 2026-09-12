@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security issue
+    url: https://github.com/KENAN-LABS/stochastic-consensus/security/advisories/new
+    about: Report privately. Please do not open a public issue for a security problem.
+  - name: How the eval harness works
+    url: https://github.com/KENAN-LABS/stochastic-consensus/blob/main/CONTRIBUTING.md
+    about: Grader types, case frontmatter, and what CI does and does not run.

@@ -1,0 +1,7 @@
+# Every change is reviewed by the maintainer. The skill and the eval suite are
+# listed explicitly because they are the parts an installer actually runs.
+*                                   @KENAN-LABS
+/skills/                            @KENAN-LABS
+/evals/                             @KENAN-LABS
+/.claude-plugin/                    @KENAN-LABS
+/.github/workflows/                 @KENAN-LABS

@@ -6,6 +6,7 @@ weight: 1
 Grade the final delivered answer from a real fan-out run.
 
 PASS requires all of:
+
 1. **Divergent/union output**, not a ranked top-N or a single recommendation.
 2. A run-statistics line reporting agents × candidates → pool → distinct count,
    and a list of the lenses used.

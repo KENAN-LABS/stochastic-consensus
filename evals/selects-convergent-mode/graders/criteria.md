@@ -6,6 +6,7 @@ weight: 1
 Grade the final delivered answer from a real fan-out run.
 
 PASS requires all of:
+
 1. **Convergent/voting output** — one named recommendation, not a union list.
 2. An explicit numeric tally in X/N form.
 3. A **dissent** section reporting the minority position and whether it has
