@@ -5,15 +5,15 @@
     "url": "https://github.com/KENAN-LABS"
   },
   "metadata": {
-    "description": "Stochastic multi-agent consensus for Claude Code \u2014 independent subagent sampling with recurrence-ranked synthesis.",
-    "version": "0.1.0"
+    "description": "Stochastic multi-agent consensus for Claude Code — independent subagent sampling with recurrence-ranked synthesis.",
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "stochastic-consensus",
       "source": "./",
       "description": "Fan out independent subagents that each sample candidate answers, then merge the pool and rank ideas by how often they recurred independently. Divergent mode for exhaustive coverage; convergent mode for voting with an explicit tally, dissent, and confidence.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "license": "MIT",
       "category": "workflow",
       "author": {

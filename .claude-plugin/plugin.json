@@ -1,6 +1,6 @@
 {
   "name": "stochastic-consensus",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Multi-agent consensus for Claude Code. Fans out independent subagents that each sample candidate answers, then merges the pool and ranks ideas by how often they recurred independently. Two modes: divergent (exhaustive coverage) and convergent (voting with an explicit tally, dissent, and confidence).",
   "author": {
     "name": "KENAN-LABS",

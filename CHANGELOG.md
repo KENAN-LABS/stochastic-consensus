@@ -6,7 +6,13 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-09-12
+
 ### Added
+
+- `.github/workflows/claude.yml` and `claude-code-review.yml` — the Claude Code
+  GitHub App workflows, added by `/install-github-app`. They authenticate from
+  the `CLAUDE_CODE_OAUTH_TOKEN` repository secret.
 
 - `CODE_OF_CONDUCT.md`, `CODEOWNERS`, `.editorconfig`, `.gitattributes`, and a
   Dependabot config.
@@ -70,5 +76,6 @@ Initial release.
   triggering (explicit and implicit), mode selection, lens decorrelation,
   declining checkable questions, and refusal to fabricate agent counts.
 
-[Unreleased]: https://github.com/KENAN-LABS/stochastic-consensus/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/KENAN-LABS/stochastic-consensus/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/KENAN-LABS/stochastic-consensus/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/KENAN-LABS/stochastic-consensus/releases/tag/v0.1.0
