@@ -124,6 +124,40 @@ jobs:
           print(f'{len(cases)} eval cases, each with a grader and declared runs/tags.')
           PY
 
+      - name: Frontmatter is valid YAML
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check pyyaml
+          python3 - <<'PY'
+          import pathlib, sys, yaml
+
+          bad = 0
+          checked = 0
+          for f in sorted(pathlib.Path('.').rglob('*.md')):
+              if 'node_modules' in f.parts or 'results' in f.parts:
+                  continue
+              lines = f.read_text().split('\n')
+              if not lines or lines[0].strip() != '---':
+                  continue
+              try:
+                  end = lines.index('---', 1)
+              except ValueError:
+                  print(f'{f}: frontmatter is never closed')
+                  bad += 1
+                  continue
+              checked += 1
+              try:
+                  yaml.safe_load('\n'.join(lines[1:end]))
+              except yaml.YAMLError as e:
+                  # The usual cause is an unquoted scalar containing ": ",
+                  # which YAML reads as a nested mapping. GitHub refuses to
+                  # render the file, and a strict loader refuses to load it.
+                  print(f'{f}: {str(e).splitlines()[0]}')
+                  bad += 1
+
+          print(f'{checked} frontmatter blocks parsed, {bad} invalid')
+          sys.exit(1 if bad else 0)
+          PY
+
       - name: Markdown lint
         run: npx --yes markdownlint-cli2 "**/*.md" "#node_modules"
 

@@ -6,6 +6,23 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-09-12
+
+### Fixed
+
+- `SKILL.md`'s YAML frontmatter was invalid. The `description` is an unquoted
+  scalar, and v0.2.0 introduced a `": "` inside it ("deliberately narrow: it
+  covers..."), which YAML reads as a nested mapping. GitHub refused to render
+  the file — *"mapping values are not allowed in this context at line 2 column
+  1090"* — and a strict loader would refuse to load the skill. Replaced with an
+  em dash.
+
+### Added
+
+- CI parses the frontmatter of every Markdown file with a real YAML loader, so
+  this class of breakage cannot ship again. It is a free check and runs on
+  fork PRs.
+
 ## [0.2.0] — 2026-09-12
 
 ### Added
@@ -76,6 +93,7 @@ Initial release.
   triggering (explicit and implicit), mode selection, lens decorrelation,
   declining checkable questions, and refusal to fabricate agent counts.
 
-[Unreleased]: https://github.com/KENAN-LABS/stochastic-consensus/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/KENAN-LABS/stochastic-consensus/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/KENAN-LABS/stochastic-consensus/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/KENAN-LABS/stochastic-consensus/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/KENAN-LABS/stochastic-consensus/releases/tag/v0.1.0
