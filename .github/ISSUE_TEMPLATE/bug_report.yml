@@ -1,0 +1,45 @@
+name: Bug report
+description: The skill behaved incorrectly
+labels: [bug]
+body:
+  - type: textarea
+    id: prompt
+    attributes:
+      label: The request you made
+      description: The prompt, verbatim. It determines whether the skill triggers at all.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: >
+        Paste the delivered answer. If the run reported agent counts or recurrence
+        figures, include them — whether they matched the actual fan-out matters.
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Which mode did it choose?
+      options:
+        - Divergent (union list)
+        - Convergent (voting, X/N tally)
+        - It did not trigger
+        - Unclear
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Claude Code version
+      placeholder: "claude --version"
+    validations:
+      required: true

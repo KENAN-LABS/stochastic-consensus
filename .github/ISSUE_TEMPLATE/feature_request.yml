@@ -1,0 +1,29 @@
+name: Change proposal
+description: Suggest a change to the method or the skill text
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What goes wrong today
+      description: Describe the situation where current behaviour is inadequate.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: checkboxes
+    id: invariants
+    attributes:
+      label: Does this affect a covered behaviour?
+      description: >
+        Three behaviours have dedicated eval cases. Changes touching them need those
+        cases re-run, and possibly new ones.
+      options:
+        - label: Never fabricating agent counts (`reports-honestly-without-fanout`)
+        - label: Declining when the answer is checkable (`declines-on-checkable-question`)
+        - label: Lens decorrelation (`decorrelates-lenses`)
+        - label: None of these

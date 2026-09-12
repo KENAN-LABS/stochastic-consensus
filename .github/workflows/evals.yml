@@ -1,0 +1,28 @@
+name: evals
+
+on:
+  pull_request:
+    paths:
+      - 'skills/**'
+      - 'evals/**'
+      - '.claude-plugin/**'
+  workflow_dispatch:
+
+jobs:
+  cheap:
+    name: integrity + negative cases
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Claude Code
+        run: curl -fsSL https://claude.ai/install.sh | bash
+      - name: Run non-fanout evals
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude plugin eval . \
+            --tag integrity --tag negative \
+            --runs 1 --ablation none \
+            --trust-plugin --no-publish \
+            --threshold 1.0 \
+            --max-cost-usd 2
