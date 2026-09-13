@@ -6,6 +6,40 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-09-13
+
+### Added
+
+- **`fanout-investigation`, a second skill.** Orchestration for investigations
+  too large for one agent to hold. A blocking recon phase inventories the
+  material, an arithmetic rule derives the agent count from that inventory, and
+  researchers write full findings to `_raw/` while returning only a 120-word
+  abstract — so the fan-out scales past ten agents without filling the
+  orchestrator's context. Fan-in is three layers deep, and the global
+  synthesizer reads `_meta/` only.
+- Three presets — `codebase`, `research`, `document-review` — plus recon,
+  researcher, synthesizer, and coverage-audit prompt templates.
+- `reference/rationale.md`, arguing the derived-count rule and the disk
+  discipline so neither is simplified away, and `reference/worked-example.md`,
+  which dry-runs the rule at four sizes including both the floor and an
+  exhausted ceiling.
+- Six eval cases covering the new skill — triggering, the negative case, the
+  degrade-on-small-material path, the mandatory matrix print, non-collision with
+  `stochastic-consensus`, and one real end-to-end fan-out against a committed
+  fixture.
+- The eval-case CI check now recognises `case.yaml` cases, not just
+  `prompt.md` ones. `prompt.md` frontmatter accepts only fifteen flat keys and
+  `scaffold_script` is not among them, so a fixture-backed case has to be
+  written as `case.yaml`.
+
+### Changed
+
+- `stochastic-consensus`'s `description` and its *when this is the wrong tool*
+  section now draw the boundary against the new skill. Agents differing by
+  **lens on one question**, merged by recurrence, is consensus; agents differing
+  by **slice of the material**, merged by coverage, is investigation.
+- The plugin description and marketplace metadata describe a two-skill plugin.
+
 ## [0.2.1] — 2026-09-12
 
 ### Fixed
@@ -93,7 +127,8 @@ Initial release.
   triggering (explicit and implicit), mode selection, lens decorrelation,
   declining checkable questions, and refusal to fabricate agent counts.
 
-[Unreleased]: https://github.com/KENAN-LABS/stochastic-consensus/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/KENAN-LABS/stochastic-consensus/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/KENAN-LABS/stochastic-consensus/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/KENAN-LABS/stochastic-consensus/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/KENAN-LABS/stochastic-consensus/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/KENAN-LABS/stochastic-consensus/releases/tag/v0.1.0

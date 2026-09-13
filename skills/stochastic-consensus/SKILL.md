@@ -1,6 +1,6 @@
 ---
 name: stochastic-consensus
-description: Run stochastic multi-agent consensus — fan out independent subagents that each sample several candidate answers, then pool, merge, and rank the results by how often ideas recurred independently. Use whenever the user wants exhaustive coverage ("all the ways to...", "every option", "brainstorm everything", "what am I missing?", "give me the full list"), wants a judgment cross-checked by independent opinions ("get consensus", "have a few agents vote", "how confident are we", "sanity-check this decision", "pressure-test this plan"), or names the technique (stochastic consensus, multi-agent consensus, self-consistency, majority voting, fan-out/fan-in, parallel sampling, ensembling). Reach for it even when the user never says "consensus" — any request whose quality depends on breadth of ideas or agreement across independent attempts is a fit. Do NOT use it when one check would settle the question — if a single command, test, or lookup produces the answer, run that instead of voting, even when consensus was explicitly requested. That exclusion is deliberately narrow — it covers questions with one verifiable answer, single-fact lookups, file edits, and decisions already made. An open-ended question about a codebase or system ("what are we missing", "what could break", "how else could we do this") is still a fit, because no single command answers it.
+description: Run stochastic multi-agent consensus — fan out independent subagents that each sample several candidate answers, then pool, merge, and rank the results by how often ideas recurred independently. Use whenever the user wants exhaustive coverage ("all the ways to...", "every option", "brainstorm everything", "what am I missing?", "give me the full list"), wants a judgment cross-checked by independent opinions ("get consensus", "have a few agents vote", "how confident are we", "sanity-check this decision", "pressure-test this plan"), or names the technique (stochastic consensus, multi-agent consensus, self-consistency, majority voting, fan-out/fan-in, parallel sampling, ensembling). Reach for it even when the user never says "consensus" — any request whose quality depends on breadth of ideas or agreement across independent attempts is a fit. Do NOT use it when one check would settle the question — if a single command, test, or lookup produces the answer, run that instead of voting, even when consensus was explicitly requested. That exclusion is deliberately narrow — it covers questions with one verifiable answer, single-fact lookups, file edits, and decisions already made. An open-ended question about a codebase or system ("what are we missing", "what could break", "how else could we do this") is still a fit, because no single command answers it. It is also the wrong tool when the work divides into many parts that each need their own agent — mapping a whole codebase, auditing a document set, surveying many sources — because that is divide-and-conquer over material rather than repeated sampling of one question, and belongs to the fanout-investigation skill instead.
 ---
 
 # Stochastic Consensus
@@ -286,6 +286,13 @@ single-fact lookups, anything with one verifiable answer (run the code instead),
 file edits and refactors, and questions where the user has already decided and
 wants execution. If a question has a checkable answer, checking beats voting —
 one test run outranks ten confident agents.
+
+It is also the wrong *shape* when the work splits into many parts that each need
+their own agent — mapping a whole codebase, auditing a document set, surveying
+many sources. Here every agent answers the same question under a different lens
+and the merge counts recurrence. There the agents cover different slices of one
+body of material and the merge checks coverage. That is `fanout-investigation`,
+the sibling skill in this plugin.
 
 Asked for consensus on something trivially checkable, say so in a sentence and
 offer to check it instead of spending 50 samples approximating a fact.

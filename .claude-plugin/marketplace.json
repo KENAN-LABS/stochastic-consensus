@@ -5,15 +5,15 @@
     "url": "https://github.com/KENAN-LABS"
   },
   "metadata": {
-    "description": "Stochastic multi-agent consensus for Claude Code — independent subagent sampling with recurrence-ranked synthesis.",
-    "version": "0.2.1"
+    "description": "Fan-out/fan-in orchestration for Claude Code \u2014 independent subagent sampling with recurrence-ranked synthesis, and recon-gated investigation fan-out with disk-backed findings.",
+    "version": "0.3.0"
   },
   "plugins": [
     {
       "name": "stochastic-consensus",
       "source": "./",
-      "description": "Fan out independent subagents that each sample candidate answers, then merge the pool and rank ideas by how often they recurred independently. Divergent mode for exhaustive coverage; convergent mode for voting with an explicit tally, dissent, and confidence.",
-      "version": "0.2.1",
+      "description": "Two fan-out/fan-in orchestration skills for Claude Code. stochastic-consensus samples one question across many independent agents and ranks ideas by how often they recurred. fanout-investigation splits a large body of material across many agents, keeps their findings on disk, and reduces them through layered synthesis with a coverage audit.",
+      "version": "0.3.0",
       "license": "MIT",
       "category": "workflow",
       "author": {

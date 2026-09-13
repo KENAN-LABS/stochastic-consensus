@@ -3,9 +3,23 @@
 [![evals](https://github.com/KENAN-LABS/stochastic-consensus/actions/workflows/evals.yml/badge.svg)](https://github.com/KENAN-LABS/stochastic-consensus/actions/workflows/evals.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A [Claude Code](https://claude.com/claude-code) skill for **multi-agent consensus**: fan out
-independent subagents that each sample candidate answers, then merge the pool and rank ideas
-by how often they recurred *independently*.
+A [Claude Code](https://claude.com/claude-code) plugin with **two fan-out/fan-in skills**.
+They share a mechanism — many subagents running at once, then a merge — and split on what the
+agents differ by.
+
+| Skill | Agents differ by | Merged by | Fires on |
+|---|---|---|---|
+| [`stochastic-consensus`](skills/stochastic-consensus/) | lens on **one question** | recurrence | "every way we could…", "which should we pick" |
+| [`fanout-investigation`](skills/fanout-investigation/) | slice of **one body of material** | coverage | "audit this whole monorepo", "review all fourteen contracts" |
+
+Most of this README is about the first. The second has its own
+[README](skills/fanout-investigation/README.md), and there is a short tour
+[below](#the-second-skill--fanout-investigation).
+
+---
+
+**`stochastic-consensus`** fans out independent subagents that each sample candidate answers,
+then merges the pool and ranks ideas by how often they recurred *independently*.
 
 One prompt gives you one trajectory through the model's distribution — usually a safe, central
 one. This runs many trajectories that cannot see each other and reports what they arrived at
@@ -179,6 +193,57 @@ method warrants:
 Single-fact lookups, anything with one verifiable answer, file edits, and decisions already
 made. See above — the skill declines these on purpose.
 
+Also not this skill when the work splits into many parts that each need their own agent —
+mapping a whole codebase, auditing a document set, surveying many sources. That is the other
+skill.
+
+## The second skill — `fanout-investigation`
+
+Orchestration for investigations too large for one agent to hold. Full documentation in
+[`skills/fanout-investigation/README.md`](skills/fanout-investigation/README.md); this is the
+shape of it.
+
+It exists because large investigations fail in two ways that are invisible in the output.
+
+**Under-decomposition.** Ask a model how many agents a job needs and it answers from the
+framing rather than the material, and lowballs — two or three where twenty were needed. The
+report that comes back is well-organised and silent about everything nobody was assigned to.
+
+**Synthesis collapse.** Many researchers reporting into one context fills it, and the
+synthesizer starts summarising summaries. Specific, citable detail is the first thing
+compression discards, and the output reads *better* afterwards.
+
+Neither is fixed by asking the model to try harder, so the skill makes them unreachable:
+
+1. **A blocking recon phase.** One agent surveys the material and returns an inventory —
+   units, sizes, importance tiers. No analysis. Decomposition happens after this, never
+   before.
+2. **The agent count is arithmetic, not judgement.** `core` units get every scope,
+   `supporting` get three, `peripheral` get one; sum it, add `max(3, ceil(units / 4))`
+   cross-cutting trace agents. A floor of 5 researchers, a ceiling of 24 agents, and a
+   reduction rule that degrades the least important work first and refuses rather than
+   quietly trimming. The matrix is printed as a table before anything spawns.
+3. **Findings go to disk, abstracts come back.** Researchers write full findings to
+   `_raw/<unit>--<scope>.md` and return at most 120 words. This is the single thing that lets
+   the fan-out scale past ten agents.
+4. **Fan-in is three layers.** One synthesizer per unit, one for the seams, one global — and
+   the global one reads `_meta/` only, never `_raw/`.
+5. **A coverage audit before reporting.** A unit × scope grid where every cell names its file
+   or carries an explicit `N/A — reason`. Blank cells are gaps, and gaps get filled or
+   justified.
+
+Three presets ship — `codebase`, `research`, `document-review` — as starting points, not
+menus. Every parameter is overridable per invocation.
+
+If recon comes back with one small unit, the skill says so and recommends skipping the
+fan-out. That is the design working, not failing.
+
+```text
+Audit this monorepo end to end — every package, and the seams between them.
+Review this contract pack in full, fourteen documents, obligations first.
+Document-review preset over ./contracts, cap it at 16 agents.
+```
+
 ## Tested
 
 Six eval cases run with `claude plugin eval` on Claude Code 2.1.269, one run per case
@@ -227,8 +292,17 @@ skills/stochastic-consensus/
     ├── generator-prompt.md         subagent prompt templates, both modes
     ├── worked-example.md           full runs, both modes, start to finish
     └── failure-modes.md            seven failure modes and their fixes
-evals/<case>/prompt.md              6 eval cases
+skills/fanout-investigation/
+├── SKILL.md                        the phased procedure
+├── README.md                       what it does, when it fires, how to steer it
+├── presets/                        codebase · research · document-review
+├── templates/                      recon · researcher · synthesizer · coverage
+└── reference/
+    ├── rationale.md                why the count is derived and disk is not optional
+    └── worked-example.md           the rule dry-run at four sizes
+evals/<case>/prompt.md              eval cases, frontmatter form
 evals/<case>/graders/*.md           their graders
+evals/<case>/case.yaml              eval cases needing a scaffold
 .claude-plugin/plugin.json          plugin manifest
 .claude-plugin/marketplace.json     makes this repo installable as a marketplace
 ```
@@ -240,6 +314,10 @@ evals/<case>/graders/*.md           their graders
   convergent and a divergent run in full
 - [`failure-modes.md`](skills/stochastic-consensus/references/failure-modes.md) — how this
   goes wrong, and the fixes
+- [`fanout-investigation/README.md`](skills/fanout-investigation/README.md) — the second
+  skill in full
+- [`rationale.md`](skills/fanout-investigation/reference/rationale.md) — why its agent count
+  is derived rather than chosen, and why findings never travel through context
 
 No executable code ships — no scripts, hooks, MCP servers, or dependencies. The eval suite and
 the CI workflow do execute; see [SECURITY.md](SECURITY.md) for what that means.

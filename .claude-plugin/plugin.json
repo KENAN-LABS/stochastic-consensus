@@ -1,7 +1,7 @@
 {
   "name": "stochastic-consensus",
-  "version": "0.2.1",
-  "description": "Multi-agent consensus for Claude Code. Fans out independent subagents that each sample candidate answers, then merges the pool and ranks ideas by how often they recurred independently. Two modes: divergent (exhaustive coverage) and convergent (voting with an explicit tally, dissent, and confidence).",
+  "version": "0.3.0",
+  "description": "Two fan-out/fan-in orchestration skills for Claude Code. stochastic-consensus samples one question across many independent agents and ranks ideas by how often they recurred. fanout-investigation splits a large body of material across many agents, keeps their findings on disk, and reduces them through layered synthesis with a coverage audit.",
   "author": {
     "name": "KENAN-LABS",
     "url": "https://github.com/KENAN-LABS"
@@ -19,7 +19,12 @@
     "fan-out",
     "parallel-sampling",
     "brainstorming",
-    "decision-making"
+    "decision-making",
+    "investigation",
+    "orchestration",
+    "codebase-audit",
+    "document-review",
+    "map-reduce"
   ],
   "experimental": {
     "evals": "evals"

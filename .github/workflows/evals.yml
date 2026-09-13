@@ -97,18 +97,42 @@ jobs:
 
       - name: Every eval case has a grader and declared runs
         run: |
+          python3 -m pip install --quiet --disable-pip-version-check pyyaml
           python3 - <<'PY'
-          import pathlib, re, sys
+          import pathlib, re, sys, yaml
 
+          # A case is either prompt.md + graders/*.md, or a single case.yaml.
+          # case.yaml exists for cases needing keys prompt.md frontmatter does
+          # not accept — scaffold_script and add_dirs are the ones that matter.
           errors = []
           cases = sorted(p for p in pathlib.Path('evals').iterdir() if p.is_dir() and p.name != 'results')
           if not cases:
               sys.exit('No eval cases found under evals/.')
 
           for case in cases:
-              prompt = case / 'prompt.md'
+              prompt, spec = case / 'prompt.md', case / 'case.yaml'
+
+              if spec.is_file():
+                  if prompt.is_file():
+                      errors.append(f'{case.name}: has both case.yaml and prompt.md; pick one')
+                  try:
+                      doc = yaml.safe_load(spec.read_text()) or {}
+                  except yaml.YAMLError as e:
+                      errors.append(f'{case.name}: case.yaml is not valid YAML — {str(e).splitlines()[0]}')
+                      continue
+                  if not doc.get('graders'):
+                      errors.append(f'{case.name}: case.yaml declares no graders')
+                  if not isinstance(doc.get('runs'), int):
+                      errors.append(f'{case.name}: case.yaml declares no "runs:"')
+                  if not doc.get('tags'):
+                      errors.append(f'{case.name}: case.yaml declares no "tags:"')
+                  script = (doc.get('context') or {}).get('scaffold_script')
+                  if script and not (case / script).is_file():
+                      errors.append(f'{case.name}: scaffold_script "{script}" does not exist')
+                  continue
+
               if not prompt.is_file():
-                  errors.append(f'{case.name}: no prompt.md')
+                  errors.append(f'{case.name}: no prompt.md and no case.yaml')
                   continue
               graders = list((case / 'graders').glob('*.md')) if (case / 'graders').is_dir() else []
               if not graders:
@@ -196,13 +220,16 @@ jobs:
       - name: Select suite
         id: suite
         run: |
+          # The fan-out arm needs --scaffold (investigation-full-fanout builds its
+          # own fixture) and --allow-tools Write (researchers write to _raw/).
+          # Both are gated by default and neither is implied by --trust-plugin.
           case "${{ github.event.inputs.suite || 'cheap' }}" in
-            fanout) echo 'args=--tag fanout --concurrency 2'            >> "$GITHUB_OUTPUT"
-                    echo 'budget=8'                                     >> "$GITHUB_OUTPUT" ;;
-            all)    echo 'args=--concurrency 2'                         >> "$GITHUB_OUTPUT"
-                    echo 'budget=10'                                    >> "$GITHUB_OUTPUT" ;;
+            fanout) echo 'args=--tag fanout --concurrency 2 --scaffold --allow-tools Write Edit' >> "$GITHUB_OUTPUT"
+                    echo 'budget=14'                                    >> "$GITHUB_OUTPUT" ;;
+            all)    echo 'args=--concurrency 2 --scaffold --allow-tools Write Edit' >> "$GITHUB_OUTPUT"
+                    echo 'budget=18'                                    >> "$GITHUB_OUTPUT" ;;
             *)      echo 'args=--tag integrity --tag negative'          >> "$GITHUB_OUTPUT"
-                    echo 'budget=2'                                     >> "$GITHUB_OUTPUT" ;;
+                    echo 'budget=5'                                     >> "$GITHUB_OUTPUT" ;;
           esac
 
       - name: Run evals

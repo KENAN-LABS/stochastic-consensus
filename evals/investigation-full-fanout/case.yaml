@@ -1,0 +1,156 @@
+schema_version: "1.0"
+name: investigation-full-fanout
+description: >-
+  A real end-to-end fan-out over a four-unit fixture. Proves that the matrix
+  print, the derived count, the cross-cutting traces, the disk discipline, the
+  layered fan-in, and the coverage audit all actually execute rather than being
+  described. Written as case.yaml rather than prompt.md because it needs
+  scaffold_script, which prompt.md frontmatter does not accept.
+
+  This case tests the MACHINERY, not spontaneous triggering. The fixture is
+  deliberately tiny so the run stays cheap, which puts it below the size where
+  the skill would normally decline the fan-out — so the prompt overrides the
+  decline explicitly. That the skill declines small material unprompted is
+  covered by investigation-degrades-on-single-unit, and its behaviour at real
+  scale is not covered by any committed case, because a fixture large enough to
+  need twenty agents costs more per run than this suite is worth.
+
+tags: [investigation, fanout]
+runs: 1
+
+context:
+  # Requires --scaffold. Without it the harness warns and runs the case against
+  # an empty workspace, where it would fail for the wrong reason.
+  scaffold_script: scaffold.sh
+
+execution:
+  # Pinned to a mid-tier model. This case grades orchestration structure, not
+  # analysis quality, and the fan-out is where essentially all the tokens go —
+  # unpinned it cost $19.30 for 18 agents, then $11.50 for 15. Pinned it is a
+  # case a maintainer will actually run.
+  #
+  # It also tests something worth knowing on its own. If the procedure only
+  # holds together on the strongest available model, this case goes red and
+  # says so, which is a fact about the skill rather than about the harness.
+  model: sonnet
+  max_turns: 90
+  timeout_seconds: 2400
+  prompt: |
+    Audit this repo end to end — every workspace, and I want the seams between
+    them covered too. The thing I care about most is how a checkout gets from
+    the web client all the way to a charge actually being made.
+
+    I know the repo is small, and I know the method would normally tell me to
+    skip the fan-out at this size. Run it anyway — I'm exercising the pipeline
+    end to end and I want the real artefacts on disk, researchers and traces and
+    synthesizers, not a recommendation to read the files myself.
+
+    Three scopes only please — cartography, architecture, security. Cap it at 8
+    agents. Don't stop to ask me for approval, just run it. Put everything under
+    .investigation/.
+
+graders:
+  - type: tool_used
+    name: fanout-actually-happened
+    tool: Agent
+    min: 8
+    weight: 1
+
+  - type: file_exists
+    name: inventory-written
+    path: .investigation/_meta/inventory.md
+    weight: 1
+
+  - type: file_exists
+    name: coverage-grid-written
+    path: .investigation/_meta/coverage.md
+    weight: 1
+
+  - type: regex
+    name: raw-files-follow-the-naming-convention
+    target: files
+    pattern: "_raw/[A-Za-z0-9._-]+--[A-Za-z-]+\\.md"
+    weight: 1
+
+  - type: regex
+    name: trace-files-exist
+    target: files
+    pattern: "_raw/trace--[A-Za-z0-9._-]+\\.md"
+    weight: 1
+
+  # Targets the trace, not last_message. The matrix is printed BEFORE the
+  # researchers spawn, so it lands mid-run; the final message is the delivered
+  # audit and has no reason to repeat it. Graded on last_message this failed a
+  # run whose matrix had in fact been printed exactly as specified.
+  - type: regex
+    name: matrix-printed-as-a-table
+    target: trace
+    pattern: "\\|[^\\n|]*unit[^\\n|]*\\|[^\\n|]*tier[^\\n|]*\\|"
+    flags: "i"
+    weight: 1
+
+  - type: llm
+    name: disk-discipline-held
+    focus: trace
+    criteria: |
+      Read the execution trace, not the final answer. This grades whether full
+      findings stayed on disk instead of travelling through context.
+
+      PASS requires all of:
+
+      1. Researcher subagents were told to write their findings to a file under
+         _raw/ and to return a short abstract. The prompts say both.
+      2. What researchers actually returned to the orchestrator is short —
+         roughly a file path plus a handful of bullet lines each. A researcher
+         returning multiple paragraphs of findings is a FAIL, because the
+         120-word abstract contract is the mechanism that lets this scale.
+      3. Synthesizer subagents were given file PATHS to read, not file contents
+         pasted into their prompts. Pasting a _raw/ file into a synthesizer
+         prompt is the collapse this design exists to prevent and is a FAIL.
+      4. At least one synthesizer is scoped to a single unit, and at least one
+         is scoped to the seams between units or to the overall deliverable.
+
+      FAIL if the orchestrator asked researchers to report their findings
+      directly, or if there is no evidence any file was written under _raw/.
+
+      Do not penalise a run for the number of agents, for which units got which
+      scopes, or for the quality of the findings. Only the routing is graded
+      here. The fixture is deliberately tiny, so abstracts may be short and
+      files thin — that is expected and is not a failure of disk discipline.
+    weight: 1
+
+  - type: llm
+    name: coverage-audit-is-honest
+    focus: last_message
+    criteria: |
+      Grade the delivered report for whether the run's coverage is stated
+      honestly.
+
+      PASS requires all of:
+
+      1. A coverage grid appears, or is explicitly referenced at
+         .investigation/_meta/coverage.md with a summary in the report.
+      2. Every unit-and-scope combination is accounted for. A cell either names
+         a file or carries an explicit "N/A" with a reason. Blank cells are a
+         FAIL — a blank cell shipped to a reader is the under-decomposition
+         failure arriving undetected.
+      3. The report states how many agents RETURNED, not only how many were
+         launched. If the two numbers differ, it says so and says which cells
+         lost their agent.
+      4. Cross-cutting threads are named and each has a trace file.
+      5. Findings carry citations — file paths, and line numbers or identifiers
+         where they apply. A report of themes with nothing locatable is a FAIL,
+         because losing the specifics is precisely the failure mode the layered
+         synthesis is built to prevent.
+
+      FAIL if any number in the report is presented as measured but contradicts
+      the trace, or if the grid is described as complete while containing empty
+      cells.
+
+      The fixture is small and synthetic, and the prompt deliberately overrides
+      the skill's own advice to skip a fan-out at this size. Do not penalise the
+      run for the material being small, for the grid being short, or for a unit
+      having little to report. Do not grade the security or architecture
+      findings on their merits — only on whether they are specific and
+      locatable.
+    weight: 1
