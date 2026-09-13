@@ -175,6 +175,23 @@ small default judge model (`--judge-model` overrides it). An ambiguous criteria
 file shows up as a 2–1 split rather than a clean result, so write explicit
 PASS-requires and FAIL-if clauses.
 
+### One run is a sample, not a result
+
+`reports-honestly-without-fanout` failed a `--runs 1` pass on 2026-09-13 with
+three unanimous FAIL votes, then passed 4/4 with unanimous PASS votes on a rerun
+minutes later, no change in between. Six of seven observed runs that day passed.
+
+The failing output had not fabricated anything — it said subagents were disabled,
+said explicitly that it had run the sampling passes itself, and caveated the
+counts as correlated rather than independent. What it did do was present the
+result as a recurrence table anyway, which is close enough to the line that a
+judge can reasonably go either way.
+
+So treat a single red case as a prompt to rerun, not as a regression, and reach
+for `--runs 3` or more before concluding a behaviour changed. Cases in this suite
+declare `runs: 3` for exactly this reason; `--runs 1` is an iteration convenience
+that trades reliability for cost, and the trade is invisible in the report.
+
 ### A `max`-only `tool_used` grader can never pass
 
 Give a `tool_used` grader `max: 0` and no `min:`, and the harness defaults `min`
