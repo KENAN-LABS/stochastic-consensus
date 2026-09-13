@@ -26,7 +26,16 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Six eval cases covering the new skill — triggering, the negative case, the
   degrade-on-small-material path, the mandatory matrix print, non-collision with
   `stochastic-consensus`, and one real end-to-end fan-out against a committed
-  fixture.
+  fixture. All six pass on Claude Code 2.1.270; the fan-out case runs 20 agents
+  for $2.49 in 15 minutes.
+- `SKILL.md` puts researchers on a cheaper model than the orchestrator and
+  reserves the strong model for synthesis. Left unstated, researchers inherited
+  the orchestrator's model and 18 agents on a 116-line fixture cost $19.30.
+- The coverage audit is a hard completion gate. A run otherwise finished — every
+  agent returned, every finding on disk — ended on "Now writing the deliverables"
+  and stopped, so Phase 4 never ran. `SKILL.md` now states the run is unfinished
+  until `_meta/coverage.md` exists, and lists the six artefacts to verify before
+  reporting.
 - The eval-case CI check now recognises `case.yaml` cases, not just
   `prompt.md` ones. `prompt.md` frontmatter accepts only fifteen flat keys and
   `scaffold_script` is not among them, so a fixture-backed case has to be

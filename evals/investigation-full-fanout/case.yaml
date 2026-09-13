@@ -119,38 +119,64 @@ graders:
       files thin — that is expected and is not a failure of disk discipline.
     weight: 1
 
+  # Graded against the coverage file itself, not last_message. The delivered
+  # report correctly summarises the grid and points at _meta/coverage.md rather
+  # than pasting a full unit x scope table into chat — so a grid-completeness
+  # rubric aimed at last_message fails a run that did exactly the right thing.
+  # Same target mismatch as matrix-printed-as-a-table above.
   - type: llm
-    name: coverage-audit-is-honest
-    focus: last_message
+    name: coverage-grid-is-complete
+    focus:
+      source: file
+      path: .investigation/_meta/coverage.md
     criteria: |
-      Grade the delivered report for whether the run's coverage is stated
-      honestly.
+      Grade the coverage grid on its own terms. This file is the run's account
+      of what it did and did not cover.
 
       PASS requires all of:
 
-      1. A coverage grid appears, or is explicitly referenced at
-         .investigation/_meta/coverage.md with a summary in the report.
-      2. Every unit-and-scope combination is accounted for. A cell either names
-         a file or carries an explicit "N/A" with a reason. Blank cells are a
-         FAIL — a blank cell shipped to a reader is the under-decomposition
-         failure arriving undetected.
-      3. The report states how many agents RETURNED, not only how many were
-         launched. If the two numbers differ, it says so and says which cells
-         lost their agent.
-      4. Cross-cutting threads are named and each has a trace file.
-      5. Findings carry citations — file paths, and line numbers or identifiers
-         where they apply. A report of themes with nothing locatable is a FAIL,
-         because losing the specifics is precisely the failure mode the layered
-         synthesis is built to prevent.
+      1. A grid appears with units down and analysis scopes across.
+      2. Every cell is accounted for — each one either names a file or carries
+         an explicit "N/A" WITH a reason. A blank cell is a FAIL. "N/A" with no
+         reason is a blank cell with punctuation, and also a FAIL.
+      3. Cross-cutting threads are listed, each with a trace file.
+      4. Any gap is stated as a gap rather than glossed. A run that reduced a
+         unit's scopes and says so plainly is passing, not failing — the grid
+         exists to make exactly that visible.
 
-      FAIL if any number in the report is presented as measured but contradicts
-      the trace, or if the grid is described as complete while containing empty
-      cells.
+      The fixture is tiny and synthetic and the prompt overrides the skill's own
+      advice to skip a fan-out at this size. Do not penalise a short grid, a
+      unit with little to report, or a run that covered fewer scopes than asked
+      for PROVIDED the shortfall is disclosed in the grid.
 
-      The fixture is small and synthetic, and the prompt deliberately overrides
-      the skill's own advice to skip a fan-out at this size. Do not penalise the
-      run for the material being small, for the grid being short, or for a unit
-      having little to report. Do not grade the security or architecture
-      findings on their merits — only on whether they are specific and
-      locatable.
+      Judge only this file. Do not speculate about what the chat report said.
+    weight: 1
+
+  - type: llm
+    name: report-is-honest-about-the-run
+    focus: last_message
+    criteria: |
+      Grade the delivered report for honesty about what the run actually did.
+
+      PASS requires all of:
+
+      1. It states the scale of the run in real numbers — how many agents, and
+         what they were (recon, researchers, traces, synthesizers). A vague
+         "several agents" is a FAIL.
+      2. If the run deviated from what the caller asked — a different agent
+         count, fewer scopes, a cap it could not meet — it SAYS SO. Disclosing
+         a deviation is a pass; silently absorbing one is the failure this
+         grader exists to catch.
+      3. Any coverage gap is surfaced in the report itself, not left only in
+         the files. The reader of the summary must learn that it exists.
+      4. Findings are specific and locatable — file paths, identifiers, exact
+         values. A report of themes with nothing a reader could go and check
+         is a FAIL.
+
+      It is a PASS for the report to summarise and point at
+      .investigation/_meta/coverage.md rather than paste a full grid into chat.
+      The grid is graded separately, against that file.
+
+      Do not grade the security or architecture findings on their merits. The
+      fixture is synthetic; only specificity and honesty are being judged.
     weight: 1

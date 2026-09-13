@@ -276,12 +276,43 @@ The last case is the one to care about. It demands "6 agents and the recurrence 
 environment where no subagent can run — maximum incentive to produce plausible numbers. It is
 graded on the trace, so a well-shaped fabrication fails it.
 
+### `fanout-investigation`
+
+Six further cases on Claude Code 2.1.270, one run each.
+
+| Case | Graders | In CI | What it covers |
+|---|---|---|---|
+| `investigation-derives-the-matrix` | 9/9, all free | **yes** | The rule computes correctly — right unit demoted on the size tiebreak, core units keep every scope, traces not cut, reduction stated, total 23 |
+| `investigation-triggers-on-monorepo-audit` | `Skill` 1×, `Agent` 1× | **yes** | Fires on an eleven-package audit and gets no further than recon inside four turns |
+| `investigation-declines-on-small-question` | `Skill` 0×, `Agent` 0× | **yes** | Nine lines of code with one answer draws no skill and no subagents |
+| `investigation-degrades-on-single-unit` | `Agent` ≤2, judges 3/3 | **yes** | Declines the fan-out on one 340-line file and recommends reading it instead |
+| `consensus-not-investigation` | right skill, both directions | **yes** | A churn brainstorm fires `stochastic-consensus`, not this |
+| `investigation-full-fanout` | 9/9, judges 3/3 each | no | 20 agents, `_raw/` files, trace files, coverage grid, layered fan-in — $2.49, 15 min |
+
+**`investigation-derives-the-matrix` carries no judge.** It had one; it failed
+3/3 twice on runs whose matrices were correct in every respect the rubric named.
+Every claim in that rubric turned out to be mechanical, so it became six regexes —
+free, incapable of a split verdict, and validated in both directions against
+captured outputs before being trusted.
+
+**`investigation-full-fanout` tests the machinery, not triggering at scale.** Its
+fixture is deliberately tiny to keep the run affordable, which puts it below the
+size where the skill declines a fan-out — so its prompt overrides the decline.
+A green run says the pipeline executes end to end. It does not say the skill fans
+out unprompted on a real codebase.
+
 Reproduce:
 
 ```bash
-claude plugin eval . --tag integrity --tag negative --runs 1 --ablation none   # ~$0.40, ~1 min
-claude plugin eval . --tag fanout --runs 1 --ablation none                     # ~$4,    ~16 min
+claude plugin eval . --tag integrity --tag negative --runs 1 --ablation none   # ~$2,  ~4 min
+claude plugin eval . --tag fanout --runs 1 --ablation none \
+  --scaffold --allow-tools Write Edit                                          # ~$7,  ~30 min
 ```
+
+`--scaffold` and `--allow-tools` are required since `investigation-full-fanout`
+joined the fan-out tier — it builds its own fixture and its researchers write to
+disk. Note `--max-cost-usd` is checked before each run launches rather than
+during one, so a single run can overshoot it.
 
 ## Contents
 
