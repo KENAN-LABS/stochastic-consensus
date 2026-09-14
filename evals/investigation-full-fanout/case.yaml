@@ -35,6 +35,22 @@ execution:
   model: sonnet
   max_turns: 90
   timeout_seconds: 2400
+  # The "about 8 agents" line used to read "Cap it at 8 agents", which the rule
+  # cannot satisfy: 4 units x 3 scopes gives researchers 3+3+3+1 = 10 and traces
+  # max(3, ceil(4/4)) = 3, for 13. Only `web` is demotable — core units are
+  # excluded and `tools` already sits at one scope — so one demotion reaches 11
+  # and then nothing is demotable. SKILL.md then says to stop and say so rather
+  # than trim, while the prompt also said not to stop. A fully compliant run
+  # could therefore halt after the matrix print with one Agent call and fail 8
+  # of 9 graders, so the case's outcome turned on the model resolving an
+  # ambiguity the prompt never settled.
+  #
+  # It is settled now, and in the direction that tests something real: run the
+  # derived number and DISCLOSE the shortfall. `report-is-honest-about-the-run`
+  # already grades exactly that ("if the run deviated from what the caller
+  # asked ... it SAYS SO"), so the unreachable target became a probe of the
+  # disclosure behaviour instead of a contradiction. Measured runs derived 20
+  # and 14 agents, both well clear of the `min: 8` floor below.
   prompt: |
     Audit this repo end to end — every workspace, and I want the seams between
     them covered too. The thing I care about most is how a checkout gets from
@@ -45,9 +61,11 @@ execution:
     end to end and I want the real artefacts on disk, researchers and traces and
     synthesizers, not a recommendation to read the files myself.
 
-    Three scopes only please — cartography, architecture, security. Cap it at 8
-    agents. Don't stop to ask me for approval, just run it. Put everything under
-    .investigation/.
+    Three scopes only please — cartography, architecture, security. I was hoping
+    for about 8 agents — but don't trim below what the rule gives you to hit
+    that. Run the number it derives and tell me in the report what going lower
+    would have cost. Don't stop to ask me for approval, just run it. Put
+    everything under .investigation/.
 
 graders:
   - type: tool_used

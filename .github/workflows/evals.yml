@@ -14,8 +14,8 @@ on:
         type: choice
         default: cheap
         options:
-          - cheap      # integrity + negative, no fan-out (~$0.40, ~1 min)
-          - fanout     # real subagent swarms      (~$6,    ~12 min)
+          - cheap      # integrity + negative, no fan-out (~$2, ~4 min)
+          - fanout     # real subagent swarms            (~$7, ~30 min)
           - all
         required: true
 
