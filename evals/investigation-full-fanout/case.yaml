@@ -109,15 +109,25 @@ graders:
   # individually. No truncation, no bridging, and it is free. Note the harness
   # compiles input_match with NO flags, so these patterns are case-explicit.
   #
-  # Counts in the measured run: 13 researchers, 5 synthesizers reading _raw/,
-  # 4 unit-scoped, 2 seam/global. The floors below sit well under those so a
-  # legitimately different shape of run does not go red; `min: 5` for the
-  # researcher contract matches the skill's own "researchers >= 5" floor.
+  # The patterns are deliberately shaped to survive paraphrase. The orchestrator
+  # rewrites the templates rather than pasting them, so matching template headers
+  # verbatim ("WRITE YOUR FINDINGS TO") scored zero on a real run. But broadening
+  # is not free either: a lead-in of "[Rr]ead the" bridged into a RESEARCHER's own
+  # write target, and "[Tt]ier-1" matched the global synthesizer merely mentioning
+  # tier-1. So the synthesizer check uses a STRUCTURAL invariant instead of any
+  # wording -- a synthesizer is handed several _raw/ paths, a researcher owns
+  # exactly one. Measured: every researcher input carries 1 path, every tier-1
+  # and the integration synthesizer carry 3.
+  #
+  # Counts in the measured 20-agent run: 13 researchers, 4 synthesizers handed
+  # several _raw/ paths, 4 unit-scoped, 2 seam/global. The floors sit well under
+  # those so a legitimately different shape of run does not go red; `min: 5` for
+  # the researcher contract matches the skill's own "researchers >= 5" floor.
 
   - type: tool_used
     name: researchers-told-to-write-findings-to-raw
     tool: Agent
-    input_match: "[Ww]rite[\\s\\S]{0,140}findings[\\s\\S]{0,250}_raw/[A-Za-z0-9._-]+--[A-Za-z0-9._-]+\\.md"
+    input_match: "(?:[Ww]rite|[Ss]ave|[Rr]ecord|[Oo]utput|[Pp]ut)[\\s\\S]{0,160}findings[\\s\\S]{0,250}_raw/[A-Za-z0-9._-]+--[A-Za-z0-9._-]+\\.md"
     min: 5
     weight: 0.2
 
@@ -129,9 +139,9 @@ graders:
     weight: 0.2
 
   - type: tool_used
-    name: synthesizers-given-raw-paths-to-read
+    name: synthesizers-given-several-raw-paths
     tool: Agent
-    input_match: "(from disk|files in full)[\\s\\S]{0,400}_raw/[A-Za-z0-9._-]+--[A-Za-z0-9._-]+\\.md"
+    input_match: "_raw/[A-Za-z0-9._-]+--[A-Za-z0-9._-]+\\.md[\\s\\S]{0,200}_raw/[A-Za-z0-9._-]+--[A-Za-z0-9._-]+\\.md"
     min: 1
     weight: 0.2
 
@@ -145,7 +155,7 @@ graders:
   - type: tool_used
     name: a-seam-scoped-synthesizer-ran
     tool: Agent
-    input_match: "(?:Tier-2|Tier-3|[Ii]ntegration|[Gg]lobal) synthesizer"
+    input_match: "(?:Tier-2|Tier-3|[Ii]ntegration|[Gg]lobal) synthesiz"
     min: 1
     weight: 0.2
 
