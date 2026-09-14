@@ -89,35 +89,71 @@ graders:
     flags: "i"
     weight: 1
 
+  # Finding: an `llm` grader with `focus: trace` does NOT see the whole trace.
+  # In 2.1.270 the judge path runs the trace through a helper that, for traces
+  # longer than 24 messages, sends only the first 12 and the last 12 with
+  # "[...N messages elided...]" in between. An 18-20 agent run is far longer than
+  # that, and the researcher spawn prompts and returned abstracts sit squarely in
+  # the elided middle — so the old single `disk-discipline-held` rubric was asking
+  # a judge to certify something it structurally could not see.
+  #
+  # `regex` with `target: trace` is NOT truncated (it takes a different code path
+  # and gets the full trace), so the researcher contract is asserted mechanically
+  # below and the judge is left only with what reliably lands in the last 12
+  # messages: how the synthesizers were routed.
+
+  - type: regex
+    name: researchers-told-to-write-findings-to-raw
+    target: trace
+    pattern: "WRITE YOUR FINDINGS TO[\\s\\S]{0,300}_raw/"
+    flags: "i"
+    weight: 0.25
+
+  - type: regex
+    name: researchers-told-to-cap-the-abstract
+    target: trace
+    pattern: "120 words"
+    flags: "i"
+    weight: 0.25
+
+  - type: regex
+    name: synthesizers-given-paths-to-read
+    target: trace
+    pattern: "READ THESE FILES FROM DISK[\\s\\S]{0,400}_raw/"
+    flags: "i"
+    weight: 0.25
+
   - type: llm
-    name: disk-discipline-held
+    name: synthesis-routing-held
     focus: trace
     criteria: |
-      Read the execution trace, not the final answer. This grades whether full
-      findings stayed on disk instead of travelling through context.
+      Grade ONLY how the synthesizer subagents were given their input.
 
-      PASS requires all of:
+      IMPORTANT: this trace is almost certainly abridged. If it is longer than
+      24 messages you are shown the first 12 and the last 12 with a
+      "[...N messages elided...]" marker between them. The synthesizers run at
+      the END of the run, so they are in the part you can see. Judge only what
+      is actually in front of you.
 
-      1. Researcher subagents were told to write their findings to a file under
-         _raw/ and to return a short abstract. The prompts say both.
-      2. What researchers actually returned to the orchestrator is short —
-         roughly a file path plus a handful of bullet lines each. A researcher
-         returning multiple paragraphs of findings is a FAIL, because the
-         120-word abstract contract is the mechanism that lets this scale.
-      3. Synthesizer subagents were given file PATHS to read, not file contents
-         pasted into their prompts. Pasting a _raw/ file into a synthesizer
-         prompt is the collapse this design exists to prevent and is a FAIL.
-      4. At least one synthesizer is scoped to a single unit, and at least one
+      Do NOT fail this grader because you cannot see the researcher spawn
+      prompts or the abstracts they returned. Those are in the elided middle and
+      are asserted separately by regex graders over the full trace. Their
+      absence from your view is expected and is not evidence of anything.
+
+      PASS requires both of:
+
+      1. Synthesizer subagents were given file PATHS to read. Pasting the body
+         of a _raw/ file into a synthesizer prompt is the context collapse this
+         design exists to prevent and is a FAIL.
+      2. At least one synthesizer is scoped to a single unit, and at least one
          is scoped to the seams between units or to the overall deliverable.
 
-      FAIL if the orchestrator asked researchers to report their findings
-      directly, or if there is no evidence any file was written under _raw/.
+      If the visible portion of the trace contains no synthesizer spawns at all,
+      that is a FAIL — the fan-in never ran.
 
-      Do not penalise a run for the number of agents, for which units got which
-      scopes, or for the quality of the findings. Only the routing is graded
-      here. The fixture is deliberately tiny, so abstracts may be short and
-      files thin — that is expected and is not a failure of disk discipline.
-    weight: 1
+      Do not penalise the number of agents, which units got which scopes, or the
+      quality of the findings. Only the routing is graded here.
+    weight: 0.25
 
   # Graded against the coverage file itself, not last_message. The delivered
   # report correctly summarises the grid and points at _meta/coverage.md rather

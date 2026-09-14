@@ -6,6 +6,20 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`investigation-full-fanout` no longer asks a judge to grade a trace it cannot
+  see.** An `llm` grader with `focus: trace` is truncated to the first 12 and last
+  12 messages once the trace exceeds 24, so the researcher spawn prompts and
+  returned abstracts that `disk-discipline-held` graded sat in the elided middle.
+  Split into three `regex` graders over `target: trace` — which is *not* truncated
+  — plus a narrowed `synthesis-routing-held` judge scoped to the fan-in, which
+  reliably lands in the visible tail. Total weight for the dimension is unchanged.
+- **`SECURITY.md` described the v0.2.x repository.** It claimed the plugin shipped
+  no scripts, that two things execute, and that an installer receives four files.
+  Since v0.3.0 there is an executable `scaffold.sh`, three things execute, and the
+  installed surface is 15 files across two skills.
+
 ## [0.3.0] — 2026-09-13
 
 ### Added
