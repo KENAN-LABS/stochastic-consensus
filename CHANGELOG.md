@@ -6,36 +6,7 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed
-
-- **`investigation-full-fanout` graded its disk discipline against evidence the
-  grader could not see.** An `llm` grader with `focus: trace` is truncated to the
-  first 12 and last 12 messages once a trace exceeds 24. A measured 20-agent run
-  produced a 1193-message trace whose last `Agent` spawn was message 1109, while
-  the judge's window began at 1181 — so no spawn was visible and the rubric
-  returned a 2-1 PASS on nothing. Replaced with five free `tool_used` graders
-  using `input_match`, which tests each Agent call's input individually: no
-  truncation and no cross-message bridging. Verified against two real runs that
-  differed substantially — 20 agents over 5 units, and 14 agents over 3 units —
-  so the patterns key on structure rather than on one run's wording. Total
-  grader weight is unchanged at 9.0.
-- **The CI eval job timed out before the suite it launches could finish.**
-  `timeout-minutes: 30` was shorter than a single case — `investigation-full-fanout`
-  declares `timeout_seconds: 2400` (40 min). A cancelled job also skips the
-  `if: always()` artifact upload, so a dispatched fan-out run lost its API spend
-  with no `eval-result.json`. Now sized per suite: 150 for `all`, 90 for
-  `fanout`, 45 otherwise.
-- **`SECURITY.md` described the v0.2.x repository.** It claimed the plugin shipped
-  no scripts, that two things execute, and that an installer receives four files.
-  Since v0.3.0 there is an executable `scaffold.sh`, three things execute, and the
-  installed surface is 15 files across two skills.
-
-### Changed
-
-- `CONTRIBUTING.md` now records the `focus: trace` truncation, the bridging
-  hazard in a whole-trace `regex`, and that `input_match` compiles with no flags.
-
-## [0.3.0] — 2026-09-13
+## [0.3.0] — 2026-09-14
 
 ### Added
 
@@ -77,6 +48,32 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   **lens on one question**, merged by recurrence, is consensus; agents differing
   by **slice of the material**, merged by coverage, is investigation.
 - The plugin description and marketplace metadata describe a two-skill plugin.
+- `CONTRIBUTING.md` now records the `focus: trace` truncation, the bridging
+  hazard in a whole-trace `regex`, and that `input_match` compiles with no flags.
+
+### Fixed
+
+- **`investigation-full-fanout` graded its disk discipline against evidence the
+  grader could not see.** An `llm` grader with `focus: trace` is truncated to the
+  first 12 and last 12 messages once a trace exceeds 24. A measured 20-agent run
+  produced a 1193-message trace whose last `Agent` spawn was message 1109, while
+  the judge's window began at 1181 — so no spawn was visible and the rubric
+  returned a 2-1 PASS on nothing. Replaced with five free `tool_used` graders
+  using `input_match`, which tests each Agent call's input individually: no
+  truncation and no cross-message bridging. Verified against two real runs that
+  differed substantially — 20 agents over 5 units, and 14 agents over 3 units —
+  so the patterns key on structure rather than on one run's wording. Total
+  grader weight is unchanged at 9.0.
+- **The CI eval job timed out before the suite it launches could finish.**
+  `timeout-minutes: 30` was shorter than a single case — `investigation-full-fanout`
+  declares `timeout_seconds: 2400` (40 min). A cancelled job also skips the
+  `if: always()` artifact upload, so a dispatched fan-out run lost its API spend
+  with no `eval-result.json`. Now sized per suite: 150 for `all`, 90 for
+  `fanout`, 45 otherwise.
+- **`SECURITY.md` described the v0.2.x repository.** It claimed the plugin shipped
+  no scripts, that two things execute, and that an installer receives four files.
+  This release adds an executable `scaffold.sh`, making three things that execute,
+  and takes the installed surface to 15 files across two skills.
 
 ## [0.2.1] — 2026-09-12
 
