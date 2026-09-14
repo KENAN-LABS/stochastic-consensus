@@ -19,6 +19,12 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   differed substantially — 20 agents over 5 units, and 14 agents over 3 units —
   so the patterns key on structure rather than on one run's wording. Total
   grader weight is unchanged at 9.0.
+- **The CI eval job timed out before the suite it launches could finish.**
+  `timeout-minutes: 30` was shorter than a single case — `investigation-full-fanout`
+  declares `timeout_seconds: 2400` (40 min). A cancelled job also skips the
+  `if: always()` artifact upload, so a dispatched fan-out run lost its API spend
+  with no `eval-result.json`. Now sized per suite: 150 for `all`, 90 for
+  `fanout`, 45 otherwise.
 - **`SECURITY.md` described the v0.2.x repository.** It claimed the plugin shipped
   no scripts, that two things execute, and that an installer receives four files.
   Since v0.3.0 there is an executable `scaffold.sh`, three things execute, and the

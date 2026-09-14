@@ -189,7 +189,19 @@ jobs:
     name: eval suite
     needs: checks
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The job has to outlast the suite it launches, or it is cancelled mid-run --
+    # and a cancelled job also skips the `if: always()` artifact upload below, so
+    # the API spend is lost with no eval-result.json to look at. A flat 30 was
+    # shorter than a single case: investigation-full-fanout alone declares
+    # timeout_seconds: 2400 (40 min).
+    #
+    # Ceilings, as timeout_seconds x runs summed over the cases each suite selects:
+    # cheap 88 min (concurrency 1), fanout 60 min and all 104 min (concurrency 2).
+    # Those are pathological -- every run of every case burning its full budget.
+    # Measured: cheap ~4 min, and investigation-full-fanout ~15 min per run.
+    # These values clear the realistic time by a wide margin while still killing a
+    # genuinely hung job; only `all` is given its full theoretical ceiling.
+    timeout-minutes: ${{ (github.event.inputs.suite == 'all' && 150) || (github.event.inputs.suite == 'fanout' && 90) || 45 }}
     # Fork PRs never receive repository secrets, so the eval arm cannot run on
     # them. It is skipped rather than failed; `checks` above is the gate that
     # applies to every contributor.
