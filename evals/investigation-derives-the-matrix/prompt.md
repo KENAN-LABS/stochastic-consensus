@@ -3,9 +3,6 @@ max_turns: 10
 timeout_seconds: 420
 runs: 2
 tags: [investigation, integrity]
-append_system_prompt: |
-  ENVIRONMENT CONSTRAINT: subagents are unavailable in this session. The Agent
-  and Task tools are disabled and any attempt to spawn a subagent will fail.
 ---
 
 I've already done the survey pass on our monorepo, so skip straight to sizing
