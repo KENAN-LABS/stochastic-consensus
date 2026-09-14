@@ -8,17 +8,25 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- **`investigation-full-fanout` no longer asks a judge to grade a trace it cannot
-  see.** An `llm` grader with `focus: trace` is truncated to the first 12 and last
-  12 messages once the trace exceeds 24, so the researcher spawn prompts and
-  returned abstracts that `disk-discipline-held` graded sat in the elided middle.
-  Split into three `regex` graders over `target: trace` — which is *not* truncated
-  — plus a narrowed `synthesis-routing-held` judge scoped to the fan-in, which
-  reliably lands in the visible tail. Total weight for the dimension is unchanged.
+- **`investigation-full-fanout` graded its disk discipline against evidence the
+  grader could not see.** An `llm` grader with `focus: trace` is truncated to the
+  first 12 and last 12 messages once a trace exceeds 24. A measured 20-agent run
+  produced a 1193-message trace whose last `Agent` spawn was message 1109, while
+  the judge's window began at 1181 — so no spawn was visible and the rubric
+  returned a 2-1 PASS on nothing. Replaced with five free `tool_used` graders
+  using `input_match`, which tests each Agent call's input individually: no
+  truncation and no cross-message bridging. Verified against the recorded calls
+  of that run (13 researchers, 5 synthesizers reading `_raw/`, 4 unit-scoped,
+  2 seam/global). Total grader weight is unchanged at 9.0.
 - **`SECURITY.md` described the v0.2.x repository.** It claimed the plugin shipped
   no scripts, that two things execute, and that an installer receives four files.
   Since v0.3.0 there is an executable `scaffold.sh`, three things execute, and the
   installed surface is 15 files across two skills.
+
+### Changed
+
+- `CONTRIBUTING.md` now records the `focus: trace` truncation, the bridging
+  hazard in a whole-trace `regex`, and that `input_match` compiles with no flags.
 
 ## [0.3.0] — 2026-09-13
 

@@ -158,7 +158,7 @@ same values:
 | Value | What it exposes |
 |---|---|
 | `last_message` | the delivered answer — **the default** |
-| `trace` | the full execution trace, including tool calls |
+| `trace` | the execution trace — **truncated for `llm`, full for `regex`**, see below |
 | `files` | files the run touched |
 | `{ source: file, path: <path> }` | one named file |
 | `mock_calls` | recorded MCP mock invocations |
@@ -174,6 +174,37 @@ actual `Agent` calls. Both are used in this suite — see
 small default judge model (`--judge-model` overrides it). An ambiguous criteria
 file shows up as a 2–1 split rather than a clean result, so write explicit
 PASS-requires and FAIL-if clauses.
+
+#### An `llm` grader with `focus: trace` does not see the whole trace
+
+Measured on 2.1.270. The judge path renders the trace through a helper that
+truncates it once it exceeds **24 messages**: you get the first 12, then
+`[…N messages elided…]`, then the last 12. A `regex` on `target: trace` takes a
+different code path and gets the whole thing.
+
+On a real 20-agent run of `investigation-full-fanout` the trace was **1193
+messages**. The last `Agent` spawn was message 1109; the judge's window started
+at 1181. **No spawn was visible at all**, and nine of the last twelve messages
+were identical end-of-run cost records carrying no content. A rubric written
+about spawn prompts still returned 2–1 PASS — it voted on evidence it could not
+see. That is a false pass of exactly the kind
+[ADR-0007](https://github.com/KENAN-LABS/stochastic-consensus) exists to prevent.
+
+Do not point an `llm` grader at `focus: trace` for anything in a long run. The
+reliable alternatives, in order of preference:
+
+1. **`tool_used` with `input_match`** — tests a regex against each tool call's
+   input individually. No truncation, no cross-message bridging, and free. This
+   is how `investigation-full-fanout` asserts its disk discipline.
+2. **`regex` with `target: trace`** — untruncated, but the whole trace is one
+   string (1.7 MB in that run), so a bridging pattern like `read[\s\S]{0,300}_raw/`
+   will happily match across unrelated messages. It matched the global
+   synthesizer's instruction *"do not read `_raw/`"* — the opposite of the claim.
+   Anchor such patterns on a full filename, not a bare directory.
+3. **`{ source: file, path: … }`** — grade an artefact the run wrote.
+
+Note `input_match` is compiled with **no flags**, so write case-explicit
+patterns (`[Ww]rite`, not a lowercase pattern plus an assumed `i`).
 
 ### One run is a sample, not a result
 

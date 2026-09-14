@@ -89,71 +89,65 @@ graders:
     flags: "i"
     weight: 1
 
-  # Finding: an `llm` grader with `focus: trace` does NOT see the whole trace.
-  # In 2.1.270 the judge path runs the trace through a helper that, for traces
-  # longer than 24 messages, sends only the first 12 and the last 12 with
-  # "[...N messages elided...]" in between. An 18-20 agent run is far longer than
-  # that, and the researcher spawn prompts and returned abstracts sit squarely in
-  # the elided middle — so the old single `disk-discipline-held` rubric was asking
-  # a judge to certify something it structurally could not see.
+  # Disk discipline is asserted against the Agent CALLS, not against the trace.
   #
-  # `regex` with `target: trace` is NOT truncated (it takes a different code path
-  # and gets the full trace), so the researcher contract is asserted mechanically
-  # below and the judge is left only with what reliably lands in the last 12
-  # messages: how the synthesizers were routed.
+  # Measured on 2.1.270 with a real 20-agent run of this case (trace: 1193
+  # messages). Two harness facts make any trace-targeted grader useless here:
+  #
+  #   1. An `llm` grader with `focus: trace` is truncated. The judge path sends
+  #      only the first 12 and last 12 messages once the trace exceeds 24, with
+  #      "[...N messages elided...]" between. In the measured run the LAST agent
+  #      spawn was message 1109 and the judge's window began at 1181 — so NO
+  #      spawn was visible at all, and a rubric about spawn prompts scored 2-1
+  #      PASS on evidence it could not see. That is a false pass, not a grader.
+  #   2. A `regex` over `target: trace` is NOT truncated, but the whole trace is
+  #      one 1.7 MB string, so a bridging pattern matches across unrelated
+  #      messages. "read ... _raw/" matched the global synthesizer's instruction
+  #      "do not read _raw/" — the exact opposite of what it claimed to assert.
+  #
+  # `tool_used` with `input_match` tests a regex against each Agent call's input
+  # individually. No truncation, no bridging, and it is free. Note the harness
+  # compiles input_match with NO flags, so these patterns are case-explicit.
+  #
+  # Counts in the measured run: 13 researchers, 5 synthesizers reading _raw/,
+  # 4 unit-scoped, 2 seam/global. The floors below sit well under those so a
+  # legitimately different shape of run does not go red; `min: 5` for the
+  # researcher contract matches the skill's own "researchers >= 5" floor.
 
-  - type: regex
+  - type: tool_used
     name: researchers-told-to-write-findings-to-raw
-    target: trace
-    pattern: "WRITE YOUR FINDINGS TO[\\s\\S]{0,300}_raw/"
-    flags: "i"
-    weight: 0.25
+    tool: Agent
+    input_match: "[Ww]rite[\\s\\S]{0,140}findings[\\s\\S]{0,250}_raw/[A-Za-z0-9._-]+--[A-Za-z0-9._-]+\\.md"
+    min: 5
+    weight: 0.2
 
-  - type: regex
+  - type: tool_used
     name: researchers-told-to-cap-the-abstract
-    target: trace
-    pattern: "120 words"
-    flags: "i"
-    weight: 0.25
+    tool: Agent
+    input_match: "120 words"
+    min: 5
+    weight: 0.2
 
-  - type: regex
-    name: synthesizers-given-paths-to-read
-    target: trace
-    pattern: "READ THESE FILES FROM DISK[\\s\\S]{0,400}_raw/"
-    flags: "i"
-    weight: 0.25
+  - type: tool_used
+    name: synthesizers-given-raw-paths-to-read
+    tool: Agent
+    input_match: "(from disk|files in full)[\\s\\S]{0,400}_raw/[A-Za-z0-9._-]+--[A-Za-z0-9._-]+\\.md"
+    min: 1
+    weight: 0.2
 
-  - type: llm
-    name: synthesis-routing-held
-    focus: trace
-    criteria: |
-      Grade ONLY how the synthesizer subagents were given their input.
+  - type: tool_used
+    name: a-unit-scoped-synthesizer-ran
+    tool: Agent
+    input_match: "[Uu]nit synthesizer"
+    min: 1
+    weight: 0.2
 
-      IMPORTANT: this trace is almost certainly abridged. If it is longer than
-      24 messages you are shown the first 12 and the last 12 with a
-      "[...N messages elided...]" marker between them. The synthesizers run at
-      the END of the run, so they are in the part you can see. Judge only what
-      is actually in front of you.
-
-      Do NOT fail this grader because you cannot see the researcher spawn
-      prompts or the abstracts they returned. Those are in the elided middle and
-      are asserted separately by regex graders over the full trace. Their
-      absence from your view is expected and is not evidence of anything.
-
-      PASS requires both of:
-
-      1. Synthesizer subagents were given file PATHS to read. Pasting the body
-         of a _raw/ file into a synthesizer prompt is the context collapse this
-         design exists to prevent and is a FAIL.
-      2. At least one synthesizer is scoped to a single unit, and at least one
-         is scoped to the seams between units or to the overall deliverable.
-
-      If the visible portion of the trace contains no synthesizer spawns at all,
-      that is a FAIL — the fan-in never ran.
-
-      Do not penalise the number of agents, which units got which scopes, or the
-      quality of the findings. Only the routing is graded here.
-    weight: 0.25
+  - type: tool_used
+    name: a-seam-scoped-synthesizer-ran
+    tool: Agent
+    input_match: "(?:Tier-2|Tier-3|[Ii]ntegration|[Gg]lobal) synthesizer"
+    min: 1
+    weight: 0.2
 
   # Graded against the coverage file itself, not last_message. The delivered
   # report correctly summarises the grid and points at _meta/coverage.md rather
