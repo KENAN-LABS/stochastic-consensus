@@ -119,10 +119,26 @@ graders:
   # exactly one. Measured: every researcher input carries 1 path, every tier-1
   # and the integration synthesizer carry 3.
   #
-  # Counts in the measured 20-agent run: 13 researchers, 4 synthesizers handed
-  # several _raw/ paths, 4 unit-scoped, 2 seam/global. The floors sit well under
-  # those so a legitimately different shape of run does not go red; `min: 5` for
-  # the researcher contract matches the skill's own "researchers >= 5" floor.
+  # Verified against TWO real runs, which differed a lot -- 20 agents / 13
+  # researchers / 5 units, and 14 agents / 8 researchers / 3 units (it merged
+  # web+api+billing into one "checkout-pipeline" unit). Counts per grader:
+  #
+  #                                          run 1   run 2   min
+  #   researchers-told-to-write-findings         13       8     5
+  #   researchers-told-to-cap-the-abstract       13       8     5
+  #   synthesizers-given-several-raw-paths        4       2     1
+  #   a-unit-scoped-synthesizer-ran               3       1     1
+  #   a-seam-scoped-synthesizer-ran               2       2     1
+  #
+  # a-unit-scoped-synthesizer-ran is the one that caught this: run 1 said
+  # "Tier-1 unit synthesizer", run 2 said "Phase 3a (tier-1) synthesizer for
+  # unit", so the literal phrase scored 0 on run 2. Widening the wording instead
+  # let the INTEGRATION synthesizer satisfy it (its prompt discusses the per-unit
+  # syntheses), which is a false positive -- worse than a red grader. So it uses
+  # a backreference: two _raw/ files sharing one non-trace unit prefix. That is
+  # what "scoped to a single unit" actually means, and no wording can drift it.
+  # The floors sit well under both runs; `min: 5` matches the skill's own
+  # "researchers >= 5" floor.
 
   - type: tool_used
     name: researchers-told-to-write-findings-to-raw
@@ -148,7 +164,7 @@ graders:
   - type: tool_used
     name: a-unit-scoped-synthesizer-ran
     tool: Agent
-    input_match: "[Uu]nit synthesizer"
+    input_match: "_raw/(?!trace--)([A-Za-z0-9._-]+)--[A-Za-z0-9._-]+\\.md[\\s\\S]{0,200}_raw/\\1--"
     min: 1
     weight: 0.2
 

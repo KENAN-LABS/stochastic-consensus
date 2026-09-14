@@ -15,9 +15,10 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the judge's window began at 1181 — so no spawn was visible and the rubric
   returned a 2-1 PASS on nothing. Replaced with five free `tool_used` graders
   using `input_match`, which tests each Agent call's input individually: no
-  truncation and no cross-message bridging. Verified against the recorded calls
-  of that run (13 researchers, 5 synthesizers reading `_raw/`, 4 unit-scoped,
-  2 seam/global). Total grader weight is unchanged at 9.0.
+  truncation and no cross-message bridging. Verified against two real runs that
+  differed substantially — 20 agents over 5 units, and 14 agents over 3 units —
+  so the patterns key on structure rather than on one run's wording. Total
+  grader weight is unchanged at 9.0.
 - **`SECURITY.md` described the v0.2.x repository.** It claimed the plugin shipped
   no scripts, that two things execute, and that an installer receives four files.
   Since v0.3.0 there is an executable `scaffold.sh`, three things execute, and the
